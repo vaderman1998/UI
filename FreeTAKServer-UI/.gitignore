@@ -1,0 +1,17 @@
+
+docker-compose.yml
+Dockerfile
+
+# Should this be managed or not?
+# config.py
+
+FTSServer-UI.db
+MANIFEST.in
+setup.py
+
+# environments
+env1/
+node_modules/
+
+# The IDE configuration
+.idea/
