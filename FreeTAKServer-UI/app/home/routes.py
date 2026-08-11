@@ -13,6 +13,7 @@ from jinja2 import TemplateNotFound
 import requests
 from flask import current_app as app
 from app.base.forms import UpdateAccountForm
+from app.base.util import admin_required, is_admin
 from app.base.models import User
 from app import db
 from requests.exceptions import ConnectionError
@@ -106,6 +107,7 @@ def connectApi():
 
 @blueprint.route('/configure')
 @login_required
+@admin_required
 def configureApi():
     headers = {'Authorization': app.config['APIKEY']}
     try:
@@ -121,6 +123,7 @@ def configureApi():
 
 @blueprint.route('/users')
 @login_required
+@admin_required
 def usersApi():
     return render_template('users.html', segment="users", 
     websocketkey=app.config['WEBSOCKETKEY'], apikey=app.config['APIKEY'], port=app.config['PORT'], protocol=app.config['PROTOCOL'], ip=app.config['IP'])     
@@ -141,6 +144,7 @@ def webmapApi():
 
 @blueprint.route('/page-user', methods=['GET', 'POST'])
 @login_required
+@admin_required
 def page_user():
     import copy
     update_account_form = UpdateAccountForm(request.form)
@@ -166,11 +170,19 @@ def qr(hash):
     qr_link = 'http://' + app.config['IP'] + ':' + app.config['PORT'] + '/GenerateQR'+ '?datapackage_hash=' + hash
     return render_template('qr.html', qr_link=qr_link)
 
+# templates whose dedicated views are admin-only; this catch-all would
+# otherwise render them by filename and bypass those checks
+ADMIN_TEMPLATES = {'users', 'configure', 'page-user'}
+
+
 @blueprint.route('/<template>')
 def route_template(template):
 
     if not current_user.is_authenticated:
         return redirect(url_for('base_blueprint.login'))
+
+    if template in ADMIN_TEMPLATES and not is_admin():
+        return render_template('errors/403.html'), 403
 
     try:
 

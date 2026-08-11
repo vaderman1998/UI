@@ -104,4 +104,13 @@ def create_app(config, selenium=False):
     configure_database(app)
     configure_logs(app)
     apply_themes(app)
+
+    # expose the current user's admin status to every template so navigation
+    # can hide links the user is not authorized to follow
+    @app.context_processor
+    def inject_is_admin():
+        from app.base.util import is_admin
+
+        return dict(is_admin=is_admin())
+
     return app

@@ -4,7 +4,7 @@ License: MIT
 Copyright (c) 2019 - present AppSeed.us
 """
 
-from flask import jsonify, render_template, redirect, request, url_for
+from flask import jsonify, render_template, redirect, request, session, url_for
 from flask_login import (
     current_user,
     login_required,
@@ -51,6 +51,12 @@ def login():
         
         # Check the password
         if user:
+            # remember the role reported by FTS for this system user; the UI
+            # calls the API with a single shared APIKEY, so authorization has
+            # to be enforced here rather than by the API's own role checks.
+            # Servers predating role support omit "role" - treat as admin so
+            # existing deployments keep working.
+            session['role'] = user.get("role", "admin")
             user = User(uid = user["uid"])
             db.session.add(user)
             db.session.commit()
@@ -70,6 +76,7 @@ def login():
 
 @blueprint.route('/logout')
 def logout():
+    session.pop('role', None)
     db.session.delete(current_user)
     db.session.commit()
     logout_user()

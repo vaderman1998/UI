@@ -24,24 +24,28 @@
 					<p style="font-size: 16px">Mission</p>
 				</a>
 			</li>
+{% if is_admin %}
 			<li class="{% if 'users' in segment %} active {% endif %}">
 				<a href="/users">
 					<i class="tim-icons icon-single-02"></i>
 					<p style="font-size: 16px">User</p>
 				</a>
 			</li>
+{% endif %}
 			<li class="{% if 'connect' in segment %} active {% endif %}">
 				<a href="/connect">
 					<i class="tim-icons icon-vector"></i>
 					<p style="font-size: 16px">Connect</p>
 				</a>
 			</li>
+{% if is_admin %}
 			<li class="{% if 'configure' in segment %} active {% endif %}">
 				<a href="/configure">
 					<i class="tim-icons icon-settings-gear-63"></i>
 					<p style="font-size: 16px">Configure</p>
 				</a>
 			</li>
+{% endif %}
 			<li class="{% if 'about' in segment %} active {% endif %}">
 				<a href="/about">
 					<i class="tim-icons icon-light-3"></i>
