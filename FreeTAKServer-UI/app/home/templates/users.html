@@ -175,6 +175,11 @@
 		let isAuth = await authenticate(socket);
 
 		if (isAuth === "True") {
+			// the channel list drives the per user channel selector
+			socket.on("channelsUpdate", function (data) {
+				knownChannels = (JSON.parse(data).Channels || []).map((channel) => channel.Name);
+			});
+			socket.emit("channels");
 			getUserInfo(socket);
 			getEventsInfo(socket);
 		} else {
@@ -221,6 +226,9 @@
 			let groupHdr = headerRow.insertCell();
 			groupHdr.textContent = "Role";
 			groupHdr.className = "user_c1";
+			let channelsHdr = headerRow.insertCell();
+			channelsHdr.textContent = "Channels";
+			channelsHdr.className = "user_c1";
 			let tokenHdr = headerRow.insertCell();
 			tokenHdr.textContent = "Token";
 			tokenHdr.className = "user_c1";
@@ -289,6 +297,37 @@
 						setUserRole(row.Uid, row.Name, this.value);
 					};
 					groupCell.appendChild(roleSelect);
+
+					let channelsCell = t_row.insertCell();
+					channelsCell.className = "user-cell-style-1";
+					let channelSelect = document.createElement("select");
+					channelSelect.className = "channel-select";
+					channelSelect.multiple = true;
+					channelSelect.size = Math.min(Math.max(knownChannels.length, 1), 4);
+					let memberOf = String(row.Channels || "")
+						.split(",")
+						.map((name) => name.trim())
+						.filter((name) => name !== "");
+					if (knownChannels.length === 0) {
+						let option = document.createElement("option");
+						option.textContent = "no channels defined";
+						option.disabled = true;
+						channelSelect.appendChild(option);
+					}
+					for (let channel of knownChannels) {
+						let option = document.createElement("option");
+						option.value = channel;
+						option.textContent = channel;
+						option.selected = memberOf.includes(channel);
+						channelSelect.appendChild(option);
+					}
+					channelSelect.onclick = function (event) { event.stopPropagation(); };
+					channelSelect.onchange = function (event) {
+						event.stopPropagation();
+						let selected = Array.from(this.selectedOptions).map((option) => option.value);
+						setUserChannels(row.Uid, row.Name, selected);
+					};
+					channelsCell.appendChild(channelSelect);
 
 					let tokenCell = t_row.insertCell();
 					// tokenCell.textContent = row.Token;
@@ -376,6 +415,27 @@
 			document.getElementById("user-delete").classList.add("btn", "btn-simple", "btn-twitter", "disable-delete");
 		}
 	}
+
+	let knownChannels = [];
+
+	const setUserChannels = async (uid, name, channels) => {
+		var socket = io.connect(`{{protocol}}://{{ip}}:{{port}}`);
+		let isAuth = await authenticate(socket);
+
+		if (isAuth === "True") {
+			socket.emit(
+				"updateSystemUser",
+				JSON.stringify({ systemUsers: [{ uid: uid, Channels: channels }] })
+			);
+			snackFunction(
+				channels.length
+					? `${name} is now on ${channels.join(", ")}`
+					: `${name} is now on the public channel only`
+			);
+		} else {
+			snackFunction("Could not update channels: not authenticated");
+		}
+	};
 
 	const setUserRole = async (uid, name, role) => {
 		var socket = io.connect(`{{protocol}}://{{ip}}:{{port}}`);

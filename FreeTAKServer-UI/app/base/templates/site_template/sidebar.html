@@ -39,6 +39,14 @@
 				</a>
 			</li>
 {% if is_admin %}
+			<li class="{% if 'channels' in segment %} active {% endif %}">
+				<a href="/channels">
+					<i class="tim-icons icon-molecule-40"></i>
+					<p style="font-size: 16px">Channels</p>
+				</a>
+			</li>
+{% endif %}
+{% if is_admin %}
 			<li class="{% if 'configure' in segment %} active {% endif %}">
 				<a href="/configure">
 					<i class="tim-icons icon-settings-gear-63"></i>

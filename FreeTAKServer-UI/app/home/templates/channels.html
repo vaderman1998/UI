@@ -1,0 +1,205 @@
+{% extends "base-site.html" %} {% block title %} Channels {% endblock %}
+
+<!-- Specific Page CSS goes HERE  -->
+{% block stylesheets %}
+<style>
+	.channel-add-section {
+		display: grid;
+		grid-template-columns: 1fr 2fr auto;
+		grid-gap: 10px;
+		padding: 10px 20px;
+		align-items: center;
+	}
+
+	.channel-members {
+		color: #b5b5b5;
+		font-size: 14px;
+	}
+
+	.channel-empty {
+		color: #b5b5b5;
+		font-style: italic;
+	}
+</style>
+{% endblock stylesheets %} {% block content %}
+
+<div style="width: 100%; display: grid; padding: 5px; margin: 0 auto; background-color: #27293d">
+	<div class="header-tools" style="justify-self: flex-end; font-size: 20px; padding-right: 20px; color: #278aed">[CHANNELS]</div>
+</div>
+
+<div style="display: grid; grid-template-columns: 1fr">
+	<div id="loading" style="display: grid; place-self: center">
+		<img src="/static/assets/img/spinner1.svg" width="80px" height="80px" />
+	</div>
+
+	<div style="max-height: 400px; max-width: 100%; overflow: auto; display: table-cell">
+		<div id="channel-table-hdr"></div>
+		<div id="channel-table"></div>
+	</div>
+
+	<div style="padding: 20px">
+		<div style="color: #b5b5b5; font-size: 14px; padding-bottom: 10px">
+			A channel confines CoT traffic: clients only exchange messages with others that
+			share a channel. Assign users to channels on the Users page. Clients that connect
+			without a certificate are limited to the public channel.
+		</div>
+		<div class="channel-add-section">
+			<input type="text" class="form-control" id="channel-name" placeholder="Channel name" />
+			<input type="text" class="form-control" id="channel-description" placeholder="Description (optional)" />
+			<button class="btn btn-simple btn-twitter" onclick="addChannel()">Add Channel</button>
+		</div>
+	</div>
+</div>
+
+<div id="snackbar"></div>
+
+{% endblock content %}
+
+<!-- Specific Page JS goes HERE  -->
+{% block javascripts %}
+<script src="/static/assets/js/socket.io.min.js"></script>
+<script>
+	let channelTableHdr = null;
+	let channelTable = null;
+
+	document.addEventListener("DOMContentLoaded", function () {
+		establishConnection();
+	});
+
+	async function establishConnection() {
+		var socket = io.connect(`{{protocol}}://{{ip}}:{{port}}`);
+		let isAuth = await authenticate(socket);
+		if (isAuth === "True") {
+			getChannelInfo(socket);
+		}
+	}
+
+	const authenticate = (socket) => {
+		socket.emit("authenticate", JSON.stringify({ Authenticate: "{{websocketkey | safe}}" }));
+
+		return new Promise(function (resolve, reject) {
+			socket.on("authentication", function (data) {
+				let authenticateObject = JSON.parse(data);
+				if (authenticateObject.successful === "True") {
+					resolve("True");
+				} else {
+					reject("False");
+				}
+			});
+		});
+	};
+
+	function getChannelInfo(socket) {
+		socket.on("channelsUpdate", function (data) {
+			renderChannels(JSON.parse(data).Channels || []);
+		});
+		socket.emit("channels");
+	}
+
+	function renderChannels(channels) {
+		document.getElementById("loading").style.display = "none";
+
+		let hdrHost = document.getElementById("channel-table-hdr");
+		let bodyHost = document.getElementById("channel-table");
+		hdrHost.innerHTML = "";
+		bodyHost.innerHTML = "";
+
+		let tablehdr = document.createElement("table");
+		tablehdr.className = "table-style-hdr";
+		let headerRow = tablehdr.insertRow();
+		for (let label of ["Name", "Description", "Members", ""]) {
+			let cell = headerRow.insertCell();
+			cell.textContent = label;
+			cell.className = "user_c1";
+		}
+		hdrHost.appendChild(tablehdr);
+
+		let table = document.createElement("table");
+		table.className = "user-table-style";
+
+		if (channels.length === 0) {
+			let row = table.insertRow();
+			row.className = "row-color-nohover row-class";
+			let cell = row.insertCell();
+			cell.textContent = "No channels yet. Everyone is on the public channel.";
+			cell.className = "user-cell-style-1 channel-empty";
+		} else {
+			for (let [index, channel] of channels.entries()) {
+				let row = table.insertRow(index);
+				row.className = "row-color-nohover row-class";
+
+				let nameCell = row.insertCell();
+				nameCell.textContent = channel.Name;
+				nameCell.className = "user-cell-style-1";
+
+				let descriptionCell = row.insertCell();
+				descriptionCell.textContent = channel.Description || "";
+				descriptionCell.className = "user-cell-style-1";
+
+				let membersCell = row.insertCell();
+				membersCell.className = "user-cell-style-1 channel-members";
+				membersCell.textContent = (channel.Members && channel.Members.length)
+					? channel.Members.join(", ")
+					: "no members";
+
+				let actionCell = row.insertCell();
+				actionCell.className = "user-cell-style-1";
+				let removeButton = document.createElement("button");
+				removeButton.className = "btn btn-simple btn-twitter";
+				removeButton.textContent = "Delete";
+				removeButton.onclick = function () {
+					removeChannel(channel.Name);
+				};
+				actionCell.appendChild(removeButton);
+			}
+		}
+		bodyHost.appendChild(table);
+	}
+
+	async function addChannel() {
+		let name = document.getElementById("channel-name").value.trim();
+		if (name === "") {
+			snackFunction("Channel name is mandatory");
+			return;
+		}
+
+		var socket = io.connect(`{{protocol}}://{{ip}}:{{port}}`);
+		let isAuth = await authenticate(socket);
+		if (isAuth === "True") {
+			socket.emit(
+				"addChannel",
+				JSON.stringify({
+					channels: [{ Name: name, Description: document.getElementById("channel-description").value.trim() }],
+				})
+			);
+			document.getElementById("channel-name").value = "";
+			document.getElementById("channel-description").value = "";
+			snackFunction(`Channel ${name} added`);
+			setTimeout(() => socket.emit("channels"), 500);
+		}
+	}
+
+	async function removeChannel(name) {
+		if (!confirm(`Delete channel ${name}? Members will be removed from it.`)) {
+			return;
+		}
+
+		var socket = io.connect(`{{protocol}}://{{ip}}:{{port}}`);
+		let isAuth = await authenticate(socket);
+		if (isAuth === "True") {
+			socket.emit("removeChannel", JSON.stringify({ channels: [{ Name: name }] }));
+			snackFunction(`Channel ${name} deleted`);
+			setTimeout(() => socket.emit("channels"), 500);
+		}
+	}
+
+	function snackFunction(message) {
+		let snackbar = document.getElementById("snackbar");
+		snackbar.innerHTML = message;
+		snackbar.className = "show";
+		setTimeout(function () {
+			snackbar.className = snackbar.className.replace("show", "");
+		}, 3000);
+	}
+</script>
+{% endblock javascripts %}

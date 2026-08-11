@@ -128,6 +128,13 @@ def usersApi():
     return render_template('users.html', segment="users", 
     websocketkey=app.config['WEBSOCKETKEY'], apikey=app.config['APIKEY'], port=app.config['PORT'], protocol=app.config['PROTOCOL'], ip=app.config['IP'])     
       
+@blueprint.route('/channels')
+@login_required
+@admin_required
+def channelsApi():
+    return render_template('channels.html', segment="channels",
+    websocketkey=app.config['WEBSOCKETKEY'], apikey=app.config['APIKEY'], port=app.config['PORT'], protocol=app.config['PROTOCOL'], ip=app.config['IP'])
+
 @blueprint.route('/about')
 @login_required
 def aboutApi():
@@ -172,7 +179,7 @@ def qr(hash):
 
 # templates whose dedicated views are admin-only; this catch-all would
 # otherwise render them by filename and bypass those checks
-ADMIN_TEMPLATES = {'users', 'configure', 'page-user'}
+ADMIN_TEMPLATES = {'users', 'configure', 'page-user', 'channels'}
 
 
 @blueprint.route('/<template>')
