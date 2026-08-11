@@ -1119,3 +1119,19 @@ div::-webkit-scrollbar-thumb {
 
 
 
+
+/* role dropdown in the user table */
+.role-select {
+	background-color: transparent;
+	color: inherit;
+	border: 1px solid rgba(255, 255, 255, 0.2);
+	border-radius: 4px;
+	padding: 2px 6px;
+	font-size: 14px;
+	cursor: pointer;
+}
+
+.role-select option {
+	background-color: #1e1e2f;
+	color: #ffffff;
+}

@@ -58,7 +58,12 @@
 	<div style="display: none" id="addUser">
 		<div class="user-add-section">
 			<div><input type="text" class="form-control" id="name1" value="" placeholder="Name" /></div>
-			<div><input type="text" class="form-control" id="group1" value="" placeholder="Role (admin or user)" /></div>
+			<div class="select" style="width: 100%">
+				<select name="format" id="group1">
+					<option selected value="user">User (read only)</option>
+					<option value="admin">Admin (full control)</option>
+				</select>
+			</div>
 			<div><input type="text" class="form-control" id="token1" value="" placeholder="Token" /></div>
 			<div><input type="text" class="form-control" id="password1" value="" placeholder="Password" /></div>
 
@@ -263,8 +268,27 @@
 					nameCell.className = "user-cell-style-1";
 
 					let groupCell = t_row.insertCell();
-					groupCell.textContent = row.Role || row.Group;
 					groupCell.className = "user-cell-style-1";
+					let roleSelect = document.createElement("select");
+					roleSelect.className = "role-select";
+					for (let [value, label] of [["user", "User"], ["admin", "Admin"]]) {
+						let option = document.createElement("option");
+						option.value = value;
+						option.textContent = label;
+						roleSelect.appendChild(option);
+					}
+					// admin is the effective role for any value that is not
+					// one of the read only ones, matching the server
+					let currentRole = String(row.Role || row.Group || "").toLowerCase();
+					roleSelect.value = ["user", "users", "readonly", "read-only", "operator"].includes(currentRole)
+						? "user"
+						: "admin";
+					roleSelect.onclick = function (event) { event.stopPropagation(); };
+					roleSelect.onchange = function (event) {
+						event.stopPropagation();
+						setUserRole(row.Uid, row.Name, this.value);
+					};
+					groupCell.appendChild(roleSelect);
 
 					let tokenCell = t_row.insertCell();
 					// tokenCell.textContent = row.Token;
@@ -352,6 +376,23 @@
 			document.getElementById("user-delete").classList.add("btn", "btn-simple", "btn-twitter", "disable-delete");
 		}
 	}
+
+	const setUserRole = async (uid, name, role) => {
+		var socket = io.connect(`{{protocol}}://{{ip}}:{{port}}`);
+
+		let isAuth = await authenticate(socket);
+
+		if (isAuth === "True") {
+			socket.emit(
+				"updateSystemUser",
+				JSON.stringify({ systemUsers: [{ uid: uid, Role: role, Group: role }] })
+			);
+			snackFunction(`${name} is now ${role === "admin" ? "an admin" : "a read only user"}`);
+			refresh();
+		} else {
+			snackFunction("Could not update role: not authenticated");
+		}
+	};
 
 	const removeUsers = async () => {
 		var socket = io.connect(`{{protocol}}://{{ip}}:{{port}}`);
