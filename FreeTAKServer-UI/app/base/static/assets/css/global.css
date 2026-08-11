@@ -1151,3 +1151,18 @@ div::-webkit-scrollbar-thumb {
 	background-color: #1e1e2f;
 	color: #ffffff;
 }
+
+/* channel checkboxes in the user table */
+.channel-checks {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+	font-size: 13px;
+	color: #b5b5b5;
+	white-space: nowrap;
+}
+
+.channel-checks label {
+	cursor: pointer;
+	margin: 0;
+}

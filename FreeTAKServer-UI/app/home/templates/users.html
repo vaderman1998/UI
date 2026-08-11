@@ -300,34 +300,37 @@
 
 					let channelsCell = t_row.insertCell();
 					channelsCell.className = "user-cell-style-1";
-					let channelSelect = document.createElement("select");
-					channelSelect.className = "channel-select";
-					channelSelect.multiple = true;
-					channelSelect.size = Math.min(Math.max(knownChannels.length, 1), 4);
+					// a checkbox per channel: a user can belong to any number of them
 					let memberOf = String(row.Channels || "")
 						.split(",")
 						.map((name) => name.trim())
 						.filter((name) => name !== "");
+					let channelBox = document.createElement("div");
+					channelBox.className = "channel-checks";
 					if (knownChannels.length === 0) {
-						let option = document.createElement("option");
-						option.textContent = "no channels defined";
-						option.disabled = true;
-						channelSelect.appendChild(option);
+						channelBox.textContent = "no channels defined";
 					}
 					for (let channel of knownChannels) {
-						let option = document.createElement("option");
-						option.value = channel;
-						option.textContent = channel;
-						option.selected = memberOf.includes(channel);
-						channelSelect.appendChild(option);
+						let label = document.createElement("label");
+						let checkbox = document.createElement("input");
+						checkbox.type = "checkbox";
+						checkbox.value = channel;
+						checkbox.checked = memberOf.includes(channel);
+						checkbox.onclick = function (event) { event.stopPropagation(); };
+						checkbox.onchange = function (event) {
+							event.stopPropagation();
+							let selected = Array.from(
+								channelBox.querySelectorAll("input[type=checkbox]")
+							)
+								.filter((box) => box.checked)
+								.map((box) => box.value);
+							setUserChannels(row.Uid, row.Name, selected);
+						};
+						label.appendChild(checkbox);
+						label.appendChild(document.createTextNode(" " + channel));
+						channelBox.appendChild(label);
 					}
-					channelSelect.onclick = function (event) { event.stopPropagation(); };
-					channelSelect.onchange = function (event) {
-						event.stopPropagation();
-						let selected = Array.from(this.selectedOptions).map((option) => option.value);
-						setUserChannels(row.Uid, row.Name, selected);
-					};
-					channelsCell.appendChild(channelSelect);
+					channelsCell.appendChild(channelBox);
 
 					let tokenCell = t_row.insertCell();
 					// tokenCell.textContent = row.Token;
