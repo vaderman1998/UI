@@ -16,12 +16,21 @@ class Config(object):
     basedir = Path(__file__).parent.absolute()
     purelib_path = basedir.parent
 
-    with open(YAML_PATH, "r") as stream:
-        config_yaml = yaml.safe_load(stream)
-        if config_yaml is None:
-            config_yaml = {}
+    # the yaml file is an optional source of defaults for the settings below;
+    # every one of them can equally be supplied through the environment, so a
+    # missing or unreadable file must not stop the UI from starting
+    try:
+        with open(YAML_PATH, "r") as stream:
+            config_yaml = yaml.safe_load(stream)
+            if config_yaml is None:
+                config_yaml = {}
+    except (OSError, yaml.YAMLError):
+        config_yaml = {}
 
-    SECRET_KEY = 'key'
+    # signs session cookies: a shared default would let anyone forge a session,
+    # so deployments are expected to supply their own
+    SECRET_KEY = environ.get('FTS_UI_SECRET_KEY',
+                             config_yaml.get('FTS_UI_SECRET_KEY', 'key'))
 
     # This will connect to the FTS db
     SQLALCHEMY_DATABASE_URI = environ.get('FTS_UI_SQLALCHEMY_DATABASE_URI',
