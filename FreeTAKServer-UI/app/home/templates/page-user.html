@@ -20,7 +20,7 @@
 						</div>
 						<div class="col-md-7 px-md-1">
 							<div class="form-group">
-								<label>Group</label>
+								<label>Role</label>
 								{{ form.group(class="form-control", value=current_user.group) }}
 							</div>
 						</div>
@@ -95,6 +95,7 @@
 		updatedUserDetails.Password = document.getElementById('password').value;
 		updatedUserDetails.Token = document.getElementById('token').value;
 		if (document.getElementById('group') !== null) {
+			updatedUserDetails.Role = document.getElementById('group').value;
 			updatedUserDetails.Group = document.getElementById('group').value;
 		}
 		updatedUserDetails.uid = "{{ user_id }}"

@@ -58,7 +58,7 @@
 	<div style="display: none" id="addUser">
 		<div class="user-add-section">
 			<div><input type="text" class="form-control" id="name1" value="" placeholder="Name" /></div>
-			<div><input type="text" class="form-control" id="group1" value="" placeholder="Group" /></div>
+			<div><input type="text" class="form-control" id="group1" value="" placeholder="Role (admin or user)" /></div>
 			<div><input type="text" class="form-control" id="token1" value="" placeholder="Token" /></div>
 			<div><input type="text" class="form-control" id="password1" value="" placeholder="Password" /></div>
 
@@ -214,7 +214,7 @@
 			nameHdr.textContent = "Name";
 			nameHdr.className = "user_c1";
 			let groupHdr = headerRow.insertCell();
-			groupHdr.textContent = "Group";
+			groupHdr.textContent = "Role";
 			groupHdr.className = "user_c1";
 			let tokenHdr = headerRow.insertCell();
 			tokenHdr.textContent = "Token";
@@ -263,7 +263,7 @@
 					nameCell.className = "user-cell-style-1";
 
 					let groupCell = t_row.insertCell();
-					groupCell.textContent = row.Group;
+					groupCell.textContent = row.Role || row.Group;
 					groupCell.className = "user-cell-style-1";
 
 					let tokenCell = t_row.insertCell();
@@ -374,7 +374,7 @@
 			snackFunction("Name field is mandatory");
 			return false;
 		} else if (document.getElementById("group1").value === "") {
-			snackFunction("Group field is mandatory");
+			snackFunction("Role field is mandatory");
 			return false;
 		} else if (document.getElementById("token1").value === "") {
 			snackFunction("Token field is mandatory");
@@ -395,6 +395,7 @@
 			systemUsers: [
 				{
 					Name: document.getElementById("name1").value,
+					Role: document.getElementById("group1").value,
 					Group: document.getElementById("group1").value,
 					Token: document.getElementById("token1").value,
 					Password: document.getElementById("password1").value,
