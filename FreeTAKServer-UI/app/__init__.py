@@ -90,7 +90,14 @@ def create_app(config, selenium=False):
     # UI configuration
     # UI version DO NOT modify it
     
-    app.config['UIVERSION'] = '2.2.2'
+    # read the installed package version rather than a hardcoded string, which
+    # kept reporting an old release after every upgrade
+    try:
+        from importlib.metadata import version as _package_version
+
+        app.config['UIVERSION'] = _package_version('FreeTAKServer-UI')
+    except Exception:
+        app.config['UIVERSION'] = 'unknown'
 
     # number of milliseconds to query FTS for connected Users, health, a System status
     app.config['USERINTERVAL'] = '180000';
