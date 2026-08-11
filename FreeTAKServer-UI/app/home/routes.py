@@ -6,7 +6,7 @@ Copyright (c) 2019 - present AppSeed.us
 """
 
 from app.home import blueprint
-from flask import render_template, redirect, url_for, request
+from flask import render_template, redirect, url_for, request, Response
 from flask_login import login_required, current_user
 from app import login_manager
 from jinja2 import TemplateNotFound
@@ -173,9 +173,34 @@ def page_user():
         return render_template('page-user.html', form=update_account_form, ip=app.config["IP"], port=app.config["PORT"], websocketkey=app.config['WEBSOCKETKEY'], apikey=app.config['APIKEY'], user_id=uid)
 
 @blueprint.route('/mission/<hash>/qr')
+@login_required
 def qr(hash):
-    qr_link = 'http://' + app.config['IP'] + ':' + app.config['PORT'] + '/GenerateQR'+ '?datapackage_hash=' + hash
-    return render_template('qr.html', qr_link=qr_link)
+    # the image is fetched through the UI rather than linked directly at the
+    # API: that endpoint requires credentials, which a browser <img> request
+    # cannot supply
+    return render_template('qr.html', qr_link=url_for('home_blueprint.qr_image', hash=hash))
+
+
+@blueprint.route('/mission/<hash>/qr.png')
+@login_required
+def qr_image(hash):
+    """Proxy the data package QR code from the API, adding the API key."""
+    try:
+        response = requests.get(
+            f"{app.config['PROTOCOL']}://{app.config['IP']}:{app.config['PORT']}/GenerateQR",
+            params={"datapackage_hash": hash},
+            headers={"Authorization": app.config['APIKEY']},
+        )
+    except ConnectionError:
+        return "FTS Server is not reachable", 502
+
+    if response.status_code != 200:
+        return "Could not generate QR code", response.status_code
+
+    return Response(
+        response.content,
+        mimetype=response.headers.get("Content-Type", "image/jpeg"),
+    )
 
 # templates whose dedicated views are admin-only; this catch-all would
 # otherwise render them by filename and bypass those checks
