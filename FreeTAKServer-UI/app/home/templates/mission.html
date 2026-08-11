@@ -109,13 +109,14 @@
 			style="
 				display: grid;
 
-				grid-template-columns: 100px 240px 240px 240px 240px 240px;
+				grid-template-columns: 60px 100px 240px 240px 240px 240px 240px;
 				padding: 10px;
 				font-size: 16px;
 				color: #fff;
 				opacity: 0.9;
 			"
 		>
+			<div style="color: #fff; font-weight: 600; padding: 5px">&nbsp;</div>
 			<div style="color: #fff; font-weight: 600; padding: 5px">Name</div>
 			<div style="color: #fff; font-weight: 600; padding: 5px">Description</div>
 			<div style="color: #fff; font-weight: 600; padding: 5px">Keywords</div>
@@ -136,8 +137,9 @@
 
 			<div
 				class="row-color-nohover row-class"
-				style="display: grid; grid-template-columns: 100px 240px 240px 240px 240px 240px; padding: 10px; color: #fff; opacity: 0.8; width: 1300px;"
+				style="display: grid; grid-template-columns: 60px 100px 240px 240px 240px 240px 240px; padding: 10px; color: #fff; opacity: 0.8; width: 1360px;"
 			>
+				<div>{% if is_admin %}<input type="checkbox" onclick="captureMissionClick('{{items['name']}}')" />{% endif %}</div>
 				<div>{{items['name']}}</div>
 				<div>{{items['description']}}</div>
 				<div>{{items['keywords']}}</div>
@@ -153,11 +155,13 @@
 	<div class="footer-tools" style="background-color: #27293d; justify-items: end;
 	padding: 16px 16px 16px 50px; display: grid; grid-template-columns: 1fr">
 		<div>
-			<div class="btn btn-simple btn-twitter" id="data-package-delete" style="color: #278aed; border-color: #278aed; display: inline-flex">
-				<span>DELETE</span> <span id="del-count">&nbsp;</span>
+			{% if is_admin %}
+			<div class="btn btn-simple btn-twitter" id="mission-delete" onclick="deleteMissions()" style="color: #278aed; border-color: #278aed; display: inline-flex">
+				<span>DELETE</span> <span id="mission-del-count">&nbsp;</span>
 			</div>
 			&nbsp;&nbsp;&nbsp;
-			<button class="btn btn-simple btn-twitter" style="color: #278aed; border-color: #278aed">ADD</button>
+			<button class="btn btn-simple btn-twitter" onclick="addMission()" style="color: #278aed; border-color: #278aed">ADD</button>
+			{% endif %}
 		</div>
 	</div>
 </div>
@@ -466,6 +470,75 @@ const authenticate = (socket) => {
 		}
 	}
 
+
+	// missions selected for deletion, by name
+	var missionArr = [];
+
+	function captureMissionClick(name) {
+		if (!missionArr.includes(name)) {
+			missionArr.push(name);
+		} else {
+			missionArr = missionArr.filter((item) => item !== name);
+		}
+
+		document.getElementById("mission-del-count").innerHTML = missionArr.length > 0 ? `&nbsp;[${missionArr.length}]` : ``;
+	}
+
+	function addMission() {
+		let name = prompt("Mission name");
+		if (name === null) {
+			return;
+		}
+		name = name.trim();
+		if (name === "") {
+			snackFunction("A mission name is required.");
+			return;
+		}
+		let description = prompt("Mission description (optional)") || "";
+
+		fetch(`{{protocol}}://{{ip}}:{{port}}/MissionTable`, {
+			method: "POST",
+			headers: { Authorization: "{{apikey | safe}}", "Content-Type": "application/json" },
+			body: JSON.stringify({ name: name, description: description }),
+		})
+			.then((response) => response.json().then((body) => ({ status: response.status, body: body })))
+			.then((result) => {
+				if (result.status === 201) {
+					snackFunction(`Mission ${name} created. Refreshing data.`);
+					refresh();
+				} else {
+					snackFunction(result.body.message || "Mission create failed.");
+				}
+			})
+			.catch(() => snackFunction("Mission create failed."));
+	}
+
+	function deleteMissions() {
+		if (missionArr.length === 0) {
+			snackFunction("Select at least one mission to delete.");
+			return;
+		}
+		if (!confirm(`Delete ${missionArr.length} mission(s)? This cannot be undone.`)) {
+			return;
+		}
+
+		fetch(`{{protocol}}://{{ip}}:{{port}}/MissionTable`, {
+			method: "DELETE",
+			headers: { Authorization: "{{apikey | safe}}", "Content-Type": "application/json" },
+			body: JSON.stringify({ names: missionArr }),
+		})
+			.then((response) => response.json().then((body) => ({ status: response.status, body: body })))
+			.then((result) => {
+				if (result.status === 200) {
+					missionArr = [];
+					snackFunction("Mission Delete Successful. Refreshing data.");
+					refresh();
+				} else {
+					snackFunction(result.body.message || "Mission delete failed.");
+				}
+			})
+			.catch(() => snackFunction("Mission delete failed."));
+	}
 
 	var excheckArr;
 
