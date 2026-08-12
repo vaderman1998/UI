@@ -177,7 +177,11 @@
 		if (isAuth === "True") {
 			// the channel list drives the per user channel selector
 			socket.on("channelsUpdate", function (data) {
-				knownChannels = (JSON.parse(data).Channels || []).map((channel) => channel.Name);
+				let defined = (JSON.parse(data).Channels || []).map((channel) => channel.Name);
+				// everyone shares the public channel, and a user assigned to a
+				// named one leaves it unless they are put back on it, so it is
+				// offered alongside the channels that were defined here
+				knownChannels = ["public"].concat(defined.filter((name) => name !== "public"));
 			});
 			socket.emit("channels");
 			getUserInfo(socket);
