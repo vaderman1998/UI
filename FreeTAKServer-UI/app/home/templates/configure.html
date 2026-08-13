@@ -203,6 +203,25 @@
 	</div>
 
 	<div class="card" style="padding: 16px;">
+		<div class="card">
+			<div class="card-body">
+				<div style="width: 100%; display: grid; margin: 0 auto">
+					<div class="header-tools" style="display: grid; width: 100%; margin: 0 auto;
+					justify-content: flex-end; font-size: 20px; color: #278aed">[CONNECTION MESSAGE]</div>
+					<div style="padding: 8px 0; color: #fff; opacity: 0.8; font-size: 14px">
+						Sent to every client as it connects. Leave it empty to greet clients with nothing.
+					</div>
+					<div><input type="text" class="form-control" value="" id="connection-message" placeholder="loading..." /></div>
+					<div style="padding-top: 12px; justify-self: end">
+						<button class="btn btn-simple btn-twitter" onclick="saveConnectionMessage()"
+							style="color: #278aed; border-color: #278aed">SAVE</button>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<div class="card" style="padding: 16px;">
 		
 		<div class="card">
 			<div class="card-body">
@@ -287,23 +306,6 @@
 
 </div>
 
-<br />
-<div style="width: 90%; display: grid; padding: 5px; margin: 0 auto; background-color: #27293d">
-	<div class="header-tools" style="justify-self: flex-end; font-size: 20px; padding-right: 20px; color: #278aed">[CONNECTION MESSAGE]</div>
-	<div style="padding: 16px; color: #fff; opacity: 0.9; font-size: 14px">
-		Sent to every client as it connects. Leave it empty to greet clients with nothing.
-	</div>
-	<div style="padding: 0 16px 16px 16px">
-		<input type="text" id="connection-message" placeholder="loading..."
-			style="width: 100%; padding: 8px; background-color: #1e1e2f; color: #fff; border: 1px solid #278aed; border-radius: 4px" />
-	</div>
-	<div class="footer-tools" style="background-color: #27293d; justify-items: end; padding: 0 16px 16px 16px; display: grid; grid-template-columns: 1fr">
-		<div>
-			<button class="btn btn-simple btn-twitter" onclick="saveConnectionMessage()"
-				style="color: #278aed; border-color: #278aed">SAVE</button>
-		</div>
-	</div>
-</div>
 <div id="snackbar" {{'class=show' if msg is defined else ''}}>{{ msg if msg is defined else '&nbsp;' }}</div>
 {% endblock content %}
 
